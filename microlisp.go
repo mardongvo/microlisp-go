@@ -70,7 +70,7 @@ func NewStatement(inp string, tryConvert bool) Statement {
 	return Statement{SType: STString, ValueString: inp}
 }
 
-//*Parse
+//***Parse-->
 //partially from https://github.com/veonik/go-lisp/blob/master/lisp/tokens.go
 type Tokens []*Token
 
@@ -102,7 +102,7 @@ func patterns() []Pattern {
 	}
 }
 
-func SplitToTokens(program string) (tokens Tokens) {
+func splitToTokens(program string) (tokens Tokens) {
 	for pos := 0; pos < len(program); {
 		for _, pattern := range patterns() {
 			if matches := pattern.regexp.FindStringSubmatch(program[pos:]); matches != nil {
@@ -118,13 +118,14 @@ func SplitToTokens(program string) (tokens Tokens) {
 }
 
 //*AST
-var EndOfExpressionError = fmt.Errorf("Unexprected end of expression")
-var ExpectOpenError = fmt.Errorf("Expected opening parenthesis")
+var ErrorEndOfExpression = fmt.Errorf("Unexprected end of expression")
+var ErrorExpectOpen = fmt.Errorf("Expected opening parenthesis")
+var ErrorTooManyTokens = fmt.Errorf("Too many tokens")
 
 //we expect only
 //1. one atom
 //2. s-expression
-func BuildAST(tokens Tokens, startpos int) (Statement, int, error) {
+func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
 	var resStmnt Statement
 	pos := startpos
 	if (tokens[pos].typ == atomToken) && (len(tokens) == 1) {
@@ -132,10 +133,10 @@ func BuildAST(tokens Tokens, startpos int) (Statement, int, error) {
 	}
 	if tokens[pos].typ == openToken {
 		resStmnt.SType = STExpression
-		resStmnt.Expression = make([]Statement, 1)
+		resStmnt.Expression = make([]Statement, 0)
 		pos++
 		if pos >= len(tokens) {
-			return Statement{}, pos, EndOfExpressionError
+			return Statement{}, pos, ErrorEndOfExpression
 		}
 		isFirstToken := true
 		for pos < len(tokens) && (tokens[pos].typ != closeToken) {
@@ -144,7 +145,7 @@ func BuildAST(tokens Tokens, startpos int) (Statement, int, error) {
 					NewStatement(tokens[pos].val, !isFirstToken)) // do not convert first token (function name)
 			}
 			if tokens[pos].typ == openToken { //function name may be s-expression that return string
-				stm, newpos, err := BuildAST(tokens, pos)
+				stm, newpos, err := buildAST(tokens, pos)
 				if err != nil {
 					return Statement{}, newpos, err
 				}
@@ -155,10 +156,24 @@ func BuildAST(tokens Tokens, startpos int) (Statement, int, error) {
 			pos++
 		}
 		if pos >= len(tokens) {
-			return Statement{}, pos, EndOfExpressionError
+			return Statement{}, pos, ErrorEndOfExpression
 		}
 	} else {
-		return Statement{}, pos, ExpectOpenError
+		return Statement{}, pos, ErrorExpectOpen
 	}
 	return resStmnt, pos, nil
 }
+
+func Parse(program string) (Statement, error) {
+	tokens := splitToTokens(program)
+	stm, endpos, err := buildAST(tokens, 0)
+	if err != nil {
+		return Statement{}, err
+	}
+	if endpos != len(tokens)-1 {
+		return Statement{}, ErrorTooManyTokens
+	}
+	return stm, nil
+}
+
+//***<--Parse
