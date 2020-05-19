@@ -3,7 +3,6 @@ package microlisp
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 )
 
 //fuzzy logic support
@@ -24,6 +23,7 @@ const (
 	STFloat
 	STBool
 	STFuzzy
+	STError
 )
 
 type Statement struct {
@@ -33,6 +33,7 @@ type Statement struct {
 	ValueFloat  float32
 	ValueBool   bool
 	ValueFuzzy  FuzzySetType
+	ValueError  string
 	Expression  []Statement
 }
 
@@ -40,35 +41,7 @@ type FunctionMap map[string]FunctionHandler
 
 type Environment map[string]Statement
 
-type FunctionHandler func(funcs *FunctionMap, env *Environment, expr *Statement)
-
-//
-
-func NewEnvironment() Environment {
-	return make(Environment)
-}
-
-//
-func NewStatement(inp string, tryConvert bool) Statement {
-	if !tryConvert {
-		return Statement{SType: STString, ValueString: inp}
-	}
-	if inp == "true" {
-		return Statement{SType: STBool, ValueBool: true}
-	}
-	if inp == "false" {
-		return Statement{SType: STBool, ValueBool: false}
-	}
-	i, err := strconv.ParseInt(inp, 10, 32)
-	if err == nil {
-		return Statement{SType: STInt, ValueInt: int(i)}
-	}
-	f, err := strconv.ParseFloat(inp, 32)
-	if err == nil {
-		return Statement{SType: STFloat, ValueFloat: float32(f)}
-	}
-	return Statement{SType: STString, ValueString: inp}
-}
+type FunctionHandler func(funcs *FunctionMap, env *Environment, expr []Statement) Statement
 
 //***Parse-->
 //partially from https://github.com/veonik/go-lisp/blob/master/lisp/tokens.go
@@ -177,3 +150,40 @@ func Parse(program string) (Statement, error) {
 }
 
 //***<--Parse
+
+// `env' function
+func GetFromEnv(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
+	var key Statement
+	if len(expr) != 1 {
+		return NewErrorStatement("Function `env' expect 1 param")
+	}
+	if expr[0].SType == STExpression {
+		key = Eval(funcs, env, &expr[0])
+	} else {
+		key = expr[0]
+	}
+	if key.SType != STString {
+		return NewErrorStatement("Function `env' expect 1 param is string")
+	}
+	if val, ok := (*env).Get(key.ValueString); ok {
+		return val
+	}
+	return NewErrorStatement(fmt.Sprintf("Environment key `%s' not found", key.ValueString))
+}
+
+//Eval
+func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
+	if expr.SType == STExpression {
+		if len(expr.Expression) == 0 {
+			return NewErrorStatement("Expression without function name")
+		}
+		if expr.Expression[0].ValueString == "env" {
+			return GetFromEnv(funcs, env, expr.Expression[1:])
+		}
+		if fhandler, ok := (*funcs)[expr.Expression[0].ValueString]; ok {
+			return fhandler(funcs, env, expr.Expression[1:])
+		}
+		return NewErrorStatement(fmt.Sprintf("Function %s not found", expr.Expression[0].ValueString))
+	}
+	return *expr
+}

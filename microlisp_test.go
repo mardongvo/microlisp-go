@@ -36,13 +36,13 @@ func TestAST(t *testing.T) {
 			Statement{
 				SType: STExpression,
 				Expression: []Statement{
-					Statement{SType: STString, ValueString: "somef"},
-					Statement{SType: STString, ValueString: "param1"},
-					Statement{SType: STString, ValueString: "param2"},
-					Statement{SType: STInt, ValueInt: 3},
-					Statement{SType: STFloat, ValueFloat: 4.0},
-					Statement{SType: STBool, ValueBool: true},
-					Statement{SType: STBool, ValueBool: false},
+					NewStringStatement("somef"),
+					NewStringStatement("param1"),
+					NewStringStatement("param2"),
+					NewIntStatement(3),
+					NewFloatStatement(4.0),
+					NewBoolStatement(true),
+					NewBoolStatement(false),
 				},
 			},
 		},
@@ -51,25 +51,25 @@ func TestAST(t *testing.T) {
 			Statement{
 				SType: STExpression,
 				Expression: []Statement{
-					Statement{SType: STString, ValueString: "func1"},
+					NewStringStatement("func1"),
 					Statement{
 						SType: STExpression,
 						Expression: []Statement{
-							Statement{SType: STString, ValueString: "func2"},
-							Statement{SType: STString, ValueString: "a"},
-							Statement{SType: STString, ValueString: "b"},
+							NewStringStatement("func2"),
+							NewStringStatement("a"),
+							NewStringStatement("b"),
 						},
 					},
-					Statement{SType: STString, ValueString: "c"},
-					Statement{SType: STString, ValueString: "d"},
+					NewStringStatement("c"),
+					NewStringStatement("d"),
 					Statement{
 						SType: STExpression,
 						Expression: []Statement{
-							Statement{SType: STString, ValueString: "func3"},
-							Statement{SType: STString, ValueString: "e"},
+							NewStringStatement("func3"),
+							NewStringStatement("e"),
 						},
 					},
-					Statement{SType: STString, ValueString: "f"},
+					NewStringStatement("f"),
 				},
 			},
 		},
@@ -114,6 +114,35 @@ func TestAST(t *testing.T) {
 		if !reflect.DeepEqual(ast, test.outp) {
 			t.Errorf("BuildAST \"%v\" gives \"%#v\", expected \"%#v\"",
 				test.inp, ast, test.outp)
+		}
+	}
+
+}
+
+func TestEval(t *testing.T) {
+	var tests = []struct {
+		program string
+		funcs   FunctionMap
+		env     Environment
+		result  Statement
+	}{
+		{"(env somekey)",
+			FunctionMap{},
+			Environment{"somekey": NewStringStatement("somevalue")},
+			NewStringStatement("somevalue"),
+		},
+		{"(env nokey)",
+			FunctionMap{},
+			Environment{"somekey": NewStringStatement("somevalue")},
+			NewErrorStatement("Environment key `nokey' not found"),
+		},
+	}
+	for _, test := range tests {
+		ast, _ := Parse(test.program)
+		val := Eval(&test.funcs, &test.env, &ast)
+		if !IsEqualStatements(val, test.result) {
+			t.Errorf("Eval \"%v\" gives \"%#v\", expected \"%#v\"",
+				test.program, val, test.result)
 		}
 	}
 
