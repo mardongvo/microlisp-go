@@ -46,6 +46,10 @@ func NewBoolStatement(inp bool) Statement {
 	return Statement{SType: STBool, ValueBool: inp}
 }
 
+func NewFuzzyStatement(inp FuzzySetType) Statement {
+	return Statement{SType: STFuzzy, ValueFuzzy: inp}
+}
+
 // Check statement equality
 // TODO: add check FuzzySet values
 func IsEqualStatements(s1 Statement, s2 Statement) bool {

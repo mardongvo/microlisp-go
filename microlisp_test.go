@@ -1,6 +1,7 @@
 package microlisp
 
 import (
+	"math"
 	"reflect"
 	"testing"
 )
@@ -195,5 +196,79 @@ func TestEvalStandartLogic(t *testing.T) {
 				test.program, val, test.result)
 		}
 	}
+}
 
+func TestEvalFuzzyLogic(t *testing.T) {
+	var tests = []struct {
+		program string
+		funcs   FunctionMap
+		env     Environment
+		result  Statement
+	}{
+		{"(fand (env a) (env b))",
+			FuzzyLogicFunctions,
+			Environment{"a": NewFloatStatement(1.0), "b": NewFloatStatement(1.0)},
+			NewFloatStatement(1.0),
+		},
+		{"(fand (env a) (env b))",
+			FuzzyLogicFunctions,
+			Environment{"a": NewFloatStatement(0.9), "b": NewFloatStatement(0.5)},
+			NewFloatStatement(0.5),
+		},
+		{"(for (env a) (env b) (env c))",
+			FuzzyLogicFunctions,
+			Environment{"a": NewFloatStatement(0.9), "b": NewFloatStatement(0.8), "c": NewFloatStatement(0.7)},
+			NewFloatStatement(0.9),
+		},
+		{"(for (for (env a) (env d)) (env b) (env c))",
+			FuzzyLogicFunctions,
+			Environment{"a": NewFloatStatement(0.1), "b": NewFloatStatement(0.5), "c": NewFloatStatement(0.3),
+				"d": NewFloatStatement(0.7)},
+			NewFloatStatement(0.7),
+		},
+		{"(fand (env a) (env b))",
+			FuzzyLogicFunctions,
+			Environment{"a": NewFloatStatement(0.1), "b": NewErrorStatement("Wow!")},
+			NewErrorStatement("Wow!"),
+		},
+	}
+	for _, test := range tests {
+		ast, _ := Parse(test.program)
+		val := Eval(&test.funcs, &test.env, &ast)
+		if !IsEqualStatements(val, test.result) {
+			t.Errorf("Eval(fuzzy logic) \"%v\" gives \"%#v\", expected \"%#v\"",
+				test.program, val, test.result)
+		}
+	}
+}
+
+func TestFuzzyEq(t *testing.T) {
+	var tests = []struct {
+		set    FuzzySetType
+		find   []Statement
+		result Statement
+	}{
+		{
+			NewFuzzySet(false, FuzzyElement{NewStringStatement("a"), 0.1},
+				FuzzyElement{NewStringStatement("b"), 0.3},
+				FuzzyElement{NewStringStatement("c"), 0.6}),
+			[]Statement{NewStringStatement("c")},
+			NewFloatStatement(0.6),
+		},
+		{
+			NewFuzzySet(false, FuzzyElement{NewStringStatement("a"), 0.1},
+				FuzzyElement{NewStringStatement("b"), 0.3},
+				FuzzyElement{NewStringStatement("c"), 0.6}),
+			[]Statement{NewStringStatement("c"), NewStringStatement("b")},
+			NewFloatStatement(0.9),
+		},
+	}
+	for _, test := range tests {
+		val := FuzzyEqSlice(test.set, test.find)
+		val.ValueFloat = float32(math.Round(float64(val.ValueFloat)*1000.0) / 1000.0)
+		if !IsEqualStatements(val, test.result) {
+			t.Errorf("FuzzyEq gives \"%#v\", expected \"%#v\"",
+				val, test.result)
+		}
+	}
 }
