@@ -147,3 +147,53 @@ func TestEval(t *testing.T) {
 	}
 
 }
+
+func TestEvalStandartLogic(t *testing.T) {
+	var tests = []struct {
+		program string
+		funcs   FunctionMap
+		env     Environment
+		result  Statement
+	}{
+		{"(and (env a) (env b))",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewBoolStatement(true)},
+			NewBoolStatement(true),
+		},
+		{"(and (env a) (env b))",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewBoolStatement(false)},
+			NewBoolStatement(false),
+		},
+		{"(or (env a) (env b) (env c))",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(false), "b": NewBoolStatement(false), "c": NewBoolStatement(false)},
+			NewBoolStatement(false),
+		},
+		{"(or (or (env a) (env d)) (env b) (env c))",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(false), "b": NewBoolStatement(false), "c": NewBoolStatement(false),
+				"d": NewBoolStatement(true)},
+			NewBoolStatement(true),
+		},
+		{"(and (env a) (env b))",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewErrorStatement("Wow!")},
+			NewErrorStatement("Wow!"),
+		},
+		{"(if (env a) b c)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewStringStatement("Here")},
+			NewStringStatement("b"),
+		},
+	}
+	for _, test := range tests {
+		ast, _ := Parse(test.program)
+		val := Eval(&test.funcs, &test.env, &ast)
+		if !IsEqualStatements(val, test.result) {
+			t.Errorf("Eval(standart logic) \"%v\" gives \"%#v\", expected \"%#v\"",
+				test.program, val, test.result)
+		}
+	}
+
+}

@@ -68,7 +68,7 @@ func IsEqualStatements(s1 Statement, s2 Statement) bool {
 		if len(s1.Expression) != len(s2.Expression) {
 			return false
 		}
-		for i, _ := range s1.Expression {
+		for i := range s1.Expression {
 			if !IsEqualStatements(s1.Expression[i], s2.Expression[i]) {
 				return false
 			}
