@@ -272,3 +272,40 @@ func TestFuzzyEq(t *testing.T) {
 		}
 	}
 }
+
+func TestJson2Env(t *testing.T) {
+	inp := map[string]interface{}{
+		"a": "abc",
+		"b": true,
+		"c": 10,
+		"d": 5.0,
+		"e": map[string]interface{}{
+			"x": 0.1,
+			"y": 0.9,
+		},
+		"f": nil, //skipped
+		"g": []interface{}{1, 2, 3, "u"},
+	}
+	out := Environment{
+		"a": NewStringStatement("abc"),
+		"b": NewBoolStatement(true),
+		"c": NewIntStatement(10),
+		"d": NewFloatStatement(5.0),
+		"e": NewFuzzyStatement(NewFuzzySet(false,
+			FuzzyElement{NewStringStatement("x"), 0.1},
+			FuzzyElement{NewStringStatement("y"), 0.9},
+		)),
+	}
+	env := JsonMapToEnvironment(inp)
+	for k, v1 := range env {
+		v2, ok := out[k]
+		if !ok {
+			t.Errorf("JsonMapToEnvironment expect key \"%#v\" but nothing",
+				k)
+		}
+		if !IsEqualStatements(v1, v2) {
+			t.Errorf("JsonMapToEnvironment key %s: got \"%#v\", expected \"%#v\"",
+				k, v1, v2)
+		}
+	}
+}
