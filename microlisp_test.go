@@ -303,7 +303,7 @@ func TestJson2Env(t *testing.T) {
 			t.Errorf("JsonMapToEnvironment expect key \"%#v\" but nothing",
 				k)
 		}
-		if !IsEqualStatements(v1, v2) {
+		if !reflect.DeepEqual(v1, v2) {
 			t.Errorf("JsonMapToEnvironment key %s: got \"%#v\", expected \"%#v\"",
 				k, v1, v2)
 		}
