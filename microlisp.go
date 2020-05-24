@@ -27,14 +27,8 @@ const (
 )
 
 type Statement struct {
-	SType       StatementType
-	ValueString string
-	ValueInt    int
-	ValueFloat  float32
-	ValueBool   bool
-	ValueFuzzy  FuzzySetType
-	ValueError  string
-	Expression  []Statement
+	SType StatementType
+	Value interface{}
 }
 
 type FunctionMap map[string]FunctionHandler
@@ -99,14 +93,12 @@ var ErrorTooManyTokens = fmt.Errorf("Too many tokens")
 //1. one atom
 //2. s-expression
 func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
-	var resStmnt Statement
+	var expression = make([]Statement, 0)
 	pos := startpos
 	if (tokens[pos].typ == atomToken) && (len(tokens) == 1) {
 		return NewStatement(tokens[pos].val, true), pos, nil
 	}
 	if tokens[pos].typ == openToken {
-		resStmnt.SType = STExpression
-		resStmnt.Expression = make([]Statement, 0)
 		pos++
 		if pos >= len(tokens) {
 			return Statement{}, pos, ErrorEndOfExpression
@@ -114,7 +106,7 @@ func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
 		isFirstToken := true
 		for pos < len(tokens) && (tokens[pos].typ != closeToken) {
 			if tokens[pos].typ == atomToken {
-				resStmnt.Expression = append(resStmnt.Expression,
+				expression = append(expression,
 					NewStatement(tokens[pos].val, !isFirstToken)) // do not convert first token (function name)
 			}
 			if tokens[pos].typ == openToken { //function name may be s-expression that return string
@@ -122,7 +114,7 @@ func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
 				if err != nil {
 					return Statement{}, newpos, err
 				}
-				resStmnt.Expression = append(resStmnt.Expression, stm)
+				expression = append(expression, stm)
 				pos = newpos
 			}
 			isFirstToken = false
@@ -134,7 +126,7 @@ func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
 	} else {
 		return Statement{}, pos, ErrorExpectOpen
 	}
-	return resStmnt, pos, nil
+	return NewExpressionStatement(expression), pos, nil
 }
 
 func Parse(program string) (Statement, error) {
@@ -165,25 +157,26 @@ func GetFromEnv(funcs *FunctionMap, env *Environment, expr []Statement) Statemen
 	if key.SType != STString {
 		return NewErrorStatement("Function `env' expect 1 param is string")
 	}
-	if val, ok := (*env).Get(key.ValueString); ok {
+	if val, ok := (*env).Get(key.ValueString()); ok {
 		return val
 	}
-	return NewErrorStatement(fmt.Sprintf("Environment key `%s' not found", key.ValueString))
+	return NewErrorStatement(fmt.Sprintf("Environment key `%s' not found", key.ValueString()))
 }
 
 //Eval
 func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
 	if expr.SType == STExpression {
-		if len(expr.Expression) == 0 {
+		e := expr.ValueExpression()
+		if len(e) == 0 {
 			return NewErrorStatement("Expression without function name")
 		}
-		if expr.Expression[0].ValueString == "env" {
-			return GetFromEnv(funcs, env, expr.Expression[1:])
+		if e[0].ValueString() == "env" {
+			return GetFromEnv(funcs, env, e[1:])
 		}
-		if fhandler, ok := (*funcs)[expr.Expression[0].ValueString]; ok {
-			return fhandler(funcs, env, expr.Expression[1:])
+		if fhandler, ok := (*funcs)[e[0].ValueString()]; ok {
+			return fhandler(funcs, env, e[1:])
 		}
-		return NewErrorStatement(fmt.Sprintf("Function %s not found", expr.Expression[0].ValueString))
+		return NewErrorStatement(fmt.Sprintf("Function %s not found", e[0].ValueString()))
 	}
 	return *expr
 }

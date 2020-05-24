@@ -29,7 +29,7 @@ func FuzzyEq(set FuzzySetType, find Statement) Statement {
 func FuzzyEqSlice(set FuzzySetType, find []Statement) Statement {
 	var res float32
 	for _, f := range find {
-		res += FuzzyEq(set, f).ValueFloat
+		res += FuzzyEq(set, f).ValueFloat()
 	}
 	return NewFloatStatement(res)
 }
@@ -47,7 +47,7 @@ var FuzzyLogicFunctions = FunctionMap{
 		if v.SType != STFloat {
 			return NewErrorStatement("Function `fnot' expect float param")
 		}
-		return NewFloatStatement(1.0 - v.ValueFloat)
+		return NewFloatStatement(1.0 - v.ValueFloat())
 	},
 	"fand": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		var res float32 = 1.0
@@ -62,8 +62,8 @@ var FuzzyLogicFunctions = FunctionMap{
 			if v.SType != STFloat {
 				return NewErrorStatement("Function `fand' expect float param")
 			}
-			if v.ValueFloat < res {
-				res = v.ValueFloat
+			if v.ValueFloat() < res {
+				res = v.ValueFloat()
 			}
 		}
 		return NewFloatStatement(res)
@@ -81,8 +81,8 @@ var FuzzyLogicFunctions = FunctionMap{
 			if v.SType != STFloat {
 				return NewErrorStatement("Function `for' expect float param")
 			}
-			if v.ValueFloat > res {
-				res = v.ValueFloat
+			if v.ValueFloat() > res {
+				res = v.ValueFloat()
 			}
 		}
 		return NewFloatStatement(res)

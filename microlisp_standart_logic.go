@@ -13,7 +13,7 @@ var StandartLogicFunctions = FunctionMap{
 		if v.SType != STBool {
 			return NewErrorStatement("Function `not' expect bool param")
 		}
-		return NewBoolStatement(!v.ValueBool)
+		return NewBoolStatement(!v.ValueBool())
 	},
 	"and": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) == 0 {
@@ -27,7 +27,7 @@ var StandartLogicFunctions = FunctionMap{
 			if v.SType != STBool {
 				return NewErrorStatement("Function `and' expect bool param")
 			}
-			if !v.ValueBool {
+			if !v.ValueBool() {
 				return NewBoolStatement(false)
 			}
 		}
@@ -45,7 +45,7 @@ var StandartLogicFunctions = FunctionMap{
 			if v.SType != STBool {
 				return NewErrorStatement("Function `or' expect bool param")
 			}
-			if v.ValueBool {
+			if v.ValueBool() {
 				return NewBoolStatement(true)
 			}
 		}
@@ -62,7 +62,7 @@ var StandartLogicFunctions = FunctionMap{
 		if cond.SType != STBool {
 			return NewErrorStatement("Function `if' expect bool param in condition")
 		}
-		if cond.ValueBool {
+		if cond.ValueBool() {
 			return Eval(funcs, env, &expr[1])
 		} else {
 			return Eval(funcs, env, &expr[2])

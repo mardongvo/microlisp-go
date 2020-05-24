@@ -34,52 +34,39 @@ func TestAST(t *testing.T) {
 	}{
 		{" ( somef param1 param2 3 4.0 true false) ",
 			nil,
-			Statement{
-				SType: STExpression,
-				Expression: []Statement{
-					NewStringStatement("somef"),
-					NewStringStatement("param1"),
-					NewStringStatement("param2"),
-					NewIntStatement(3),
-					NewFloatStatement(4.0),
-					NewBoolStatement(true),
-					NewBoolStatement(false),
-				},
-			},
+			NewExpressionStatement([]Statement{
+				NewStringStatement("somef"),
+				NewStringStatement("param1"),
+				NewStringStatement("param2"),
+				NewIntStatement(3),
+				NewFloatStatement(4.0),
+				NewBoolStatement(true),
+				NewBoolStatement(false),
+			}),
 		},
 		{" ( func1 (func2 a b) c d (func3 e) f) ",
 			nil,
-			Statement{
-				SType: STExpression,
-				Expression: []Statement{
-					NewStringStatement("func1"),
-					Statement{
-						SType: STExpression,
-						Expression: []Statement{
-							NewStringStatement("func2"),
-							NewStringStatement("a"),
-							NewStringStatement("b"),
-						},
-					},
-					NewStringStatement("c"),
-					NewStringStatement("d"),
-					Statement{
-						SType: STExpression,
-						Expression: []Statement{
-							NewStringStatement("func3"),
-							NewStringStatement("e"),
-						},
-					},
-					NewStringStatement("f"),
-				},
-			},
+			NewExpressionStatement([]Statement{
+				NewStringStatement("func1"),
+				NewExpressionStatement(
+					[]Statement{
+						NewStringStatement("func2"),
+						NewStringStatement("a"),
+						NewStringStatement("b"),
+					}),
+				NewStringStatement("c"),
+				NewStringStatement("d"),
+				NewExpressionStatement(
+					[]Statement{
+						NewStringStatement("func3"),
+						NewStringStatement("e"),
+					}),
+				NewStringStatement("f"),
+			}),
 		},
 		{"somef",
 			nil,
-			Statement{
-				SType:       STString,
-				ValueString: "somef",
-			},
+			NewStringStatement("somef"),
 		},
 		{"somef erratom",
 			ErrorExpectOpen,
@@ -265,7 +252,7 @@ func TestFuzzyEq(t *testing.T) {
 	}
 	for _, test := range tests {
 		val := FuzzyEqSlice(test.set, test.find)
-		val.ValueFloat = float32(math.Round(float64(val.ValueFloat)*1000.0) / 1000.0)
+		val = NewFloatStatement(float32(math.Round(float64(val.ValueFloat())*1000.0) / 1000.0))
 		if !IsEqualStatements(val, test.result) {
 			t.Errorf("FuzzyEq gives \"%#v\", expected \"%#v\"",
 				val, test.result)
