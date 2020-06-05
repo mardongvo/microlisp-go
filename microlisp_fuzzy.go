@@ -1,5 +1,7 @@
 package microlisp
 
+import "fmt"
+
 func NewFuzzySet(normalize bool, elems ...FuzzyElement) FuzzySetType {
 	var res FuzzySetType = make(FuzzySetType, len(elems))
 	var sum float32
@@ -38,29 +40,29 @@ func FuzzyEqSlice(set FuzzySetType, find []Statement) Statement {
 var FuzzyLogicFunctions = FunctionMap{
 	"fnot": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) != 1 {
-			return NewErrorStatement("Function `fnot' required one param")
+			return NewErrorStatement(fmt.Errorf("Function `fnot' required one param"))
 		}
 		v := Eval(funcs, env, &expr[0])
-		if v.SType == STError {
+		if v.Type() == STError {
 			return v
 		}
-		if v.SType != STFloat {
-			return NewErrorStatement("Function `fnot' expect float param")
+		if v.Type() != STFloat {
+			return NewErrorStatement(fmt.Errorf("Function `fnot' expect float param"))
 		}
 		return NewFloatStatement(1.0 - v.ValueFloat())
 	},
 	"fand": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		var res float32 = 1.0
 		if len(expr) == 0 {
-			return NewErrorStatement("Function `fand' required at least one param")
+			return NewErrorStatement(fmt.Errorf("Function `fand' required at least one param"))
 		}
 		for _, e := range expr {
 			v := Eval(funcs, env, &e)
-			if v.SType == STError {
+			if v.Type() == STError {
 				return v
 			}
-			if v.SType != STFloat {
-				return NewErrorStatement("Function `fand' expect float param")
+			if v.Type() != STFloat {
+				return NewErrorStatement(fmt.Errorf("Function `fand' expect float param"))
 			}
 			if v.ValueFloat() < res {
 				res = v.ValueFloat()
@@ -71,15 +73,15 @@ var FuzzyLogicFunctions = FunctionMap{
 	"for": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		var res float32 = 0.0
 		if len(expr) == 0 {
-			return NewErrorStatement("Function `for' required at least one param")
+			return NewErrorStatement(fmt.Errorf("Function `for' required at least one param"))
 		}
 		for _, e := range expr {
 			v := Eval(funcs, env, &e)
-			if v.SType == STError {
+			if v.Type() == STError {
 				return v
 			}
-			if v.SType != STFloat {
-				return NewErrorStatement("Function `for' expect float param")
+			if v.Type() != STFloat {
+				return NewErrorStatement(fmt.Errorf("Function `for' expect float param"))
 			}
 			if v.ValueFloat() > res {
 				res = v.ValueFloat()

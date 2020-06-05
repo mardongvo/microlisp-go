@@ -1,10 +1,27 @@
 package microlisp
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
 )
+
+func TestStatementType(t *testing.T) {
+	var tests = []struct {
+		inp  Statement
+		outp StatementType
+	}{
+		{NewStringStatement("a"), STString},
+	}
+	for _, test := range tests {
+		x := test.inp.Type()
+		if x != test.outp {
+			t.Errorf("TestStatementType \"%v\" gives \"%v\", expected \"%v\"",
+				test.inp, x, test.outp)
+		}
+	}
+}
 
 func TestTokens1(t *testing.T) {
 	var tests = []struct {
@@ -122,7 +139,7 @@ func TestEval(t *testing.T) {
 		{"(env nokey)",
 			FunctionMap{},
 			Environment{"somekey": NewStringStatement("somevalue")},
-			NewErrorStatement("Environment key `nokey' not found"),
+			NewErrorStatement(fmt.Errorf("Environment key `nokey' not found")),
 		},
 	}
 	for _, test := range tests {
@@ -166,8 +183,8 @@ func TestEvalStandartLogic(t *testing.T) {
 		},
 		{"(and (env a) (env b))",
 			StandartLogicFunctions,
-			Environment{"a": NewBoolStatement(true), "b": NewErrorStatement("Wow!")},
-			NewErrorStatement("Wow!"),
+			Environment{"a": NewBoolStatement(true), "b": NewErrorStatement(fmt.Errorf("Wow!"))},
+			NewErrorStatement(fmt.Errorf("Wow!")),
 		},
 		{"(if (env a) b c)",
 			StandartLogicFunctions,
@@ -215,8 +232,8 @@ func TestEvalFuzzyLogic(t *testing.T) {
 		},
 		{"(fand (env a) (env b))",
 			FuzzyLogicFunctions,
-			Environment{"a": NewFloatStatement(0.1), "b": NewErrorStatement("Wow!")},
-			NewErrorStatement("Wow!"),
+			Environment{"a": NewFloatStatement(0.1), "b": NewErrorStatement(fmt.Errorf("Wow!"))},
+			NewErrorStatement(fmt.Errorf("Wow!")),
 		},
 	}
 	for _, test := range tests {

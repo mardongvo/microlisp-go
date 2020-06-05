@@ -24,10 +24,10 @@ const (
 	STBool
 	STFuzzy
 	STError
+	STUnknown
 )
 
 type Statement struct {
-	SType StatementType
 	Value interface{}
 }
 
@@ -147,28 +147,28 @@ func Parse(program string) (Statement, error) {
 func GetFromEnv(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 	var key Statement
 	if len(expr) != 1 {
-		return NewErrorStatement("Function `env' expect 1 param")
+		return NewErrorStatement(fmt.Errorf("Function `env' expect 1 param"))
 	}
-	if expr[0].SType == STExpression {
+	if expr[0].Type() == STExpression {
 		key = Eval(funcs, env, &expr[0])
 	} else {
 		key = expr[0]
 	}
-	if key.SType != STString {
-		return NewErrorStatement("Function `env' expect 1 param is string")
+	if key.Type() != STString {
+		return NewErrorStatement(fmt.Errorf("Function `env' expect 1 param is string"))
 	}
 	if val, ok := (*env).Get(key.ValueString()); ok {
 		return val
 	}
-	return NewErrorStatement(fmt.Sprintf("Environment key `%s' not found", key.ValueString()))
+	return NewErrorStatement(fmt.Errorf("Environment key `%s' not found", key.ValueString()))
 }
 
 //Eval
 func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
-	if expr.SType == STExpression {
+	if expr.Type() == STExpression {
 		e := expr.ValueExpression()
 		if len(e) == 0 {
-			return NewErrorStatement("Expression without function name")
+			return NewErrorStatement(fmt.Errorf("Expression without function name"))
 		}
 		if e[0].ValueString() == "env" {
 			return GetFromEnv(funcs, env, e[1:])
@@ -176,7 +176,7 @@ func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
 		if fhandler, ok := (*funcs)[e[0].ValueString()]; ok {
 			return fhandler(funcs, env, e[1:])
 		}
-		return NewErrorStatement(fmt.Sprintf("Function %s not found", e[0].ValueString()))
+		return NewErrorStatement(fmt.Errorf("Function %s not found", e[0].ValueString()))
 	}
 	return *expr
 }
