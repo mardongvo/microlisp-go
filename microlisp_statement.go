@@ -47,6 +47,10 @@ func NewFloatStatement(inp float32) Statement {
 	return Statement{inp}
 }
 
+func NewFloatArrayStatement(inp []float32) Statement {
+	return Statement{inp}
+}
+
 func NewBoolStatement(inp bool) Statement {
 	return Statement{inp}
 }
@@ -66,6 +70,8 @@ func (s Statement) Type() StatementType {
 		return STInt
 	case float32:
 		return STFloat
+	case []float32:
+		return STFloatArray
 	case bool:
 		return STBool
 	case FuzzySetType:
@@ -113,6 +119,13 @@ func (s Statement) ValueFloat() float32 {
 		return float32(s.Value.(int))
 	}
 	return 0.0
+}
+
+func (s Statement) ValueFloatArray() []float32 {
+	if s.Type() == STFloatArray {
+		return s.Value.([]float32)
+	}
+	return make([]float32, 0)
 }
 
 func (s Statement) ValueBool() bool {

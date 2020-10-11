@@ -21,6 +21,7 @@ const (
 	STString
 	STInt
 	STFloat
+	STFloatArray
 	STBool
 	STFuzzy
 	STError
