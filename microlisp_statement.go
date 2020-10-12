@@ -122,10 +122,16 @@ func (s Statement) ValueFloat() float32 {
 }
 
 func (s Statement) ValueFloatArray() []float32 {
-	if s.Type() == STFloatArray {
+	switch s.Type() {
+	case STFloatArray:
 		return s.Value.([]float32)
+	case STFloat:
+		return []float32{s.Value.(float32)}
+	case STInt:
+		return []float32{float32(s.Value.(int))}
+	default:
+		return make([]float32, 0)
 	}
-	return make([]float32, 0)
 }
 
 func (s Statement) ValueBool() bool {

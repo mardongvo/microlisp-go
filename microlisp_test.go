@@ -313,3 +313,36 @@ func TestJson2Env(t *testing.T) {
 		}
 	}
 }
+
+func sliceEq(a, b []float32) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestFloatArray(t *testing.T) {
+	testcases := []struct {
+		inp Statement
+		out []float32
+	}{
+		{NewFloatArrayStatement([]float32{1, 2}), []float32{1, 2}},
+		{NewIntStatement(1), []float32{1.0}},
+		{NewFloatStatement(1.0), []float32{1.0}},
+		{NewStringStatement(""), []float32{}},
+	}
+	for _, test := range testcases {
+		if !sliceEq(test.inp.ValueFloatArray(), test.out) {
+			t.Errorf("FloatArray: \"%#v\" != \"%#v\"",
+				test.inp, test.out)
+		}
+	}
+}
