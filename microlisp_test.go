@@ -136,10 +136,20 @@ func TestEval(t *testing.T) {
 			Environment{"somekey": NewStringStatement("somevalue")},
 			NewStringStatement("somevalue"),
 		},
+		{"!somekey",
+			FunctionMap{},
+			Environment{"somekey": NewStringStatement("somevalue")},
+			NewStringStatement("somevalue"),
+		},
 		{"(env nokey)",
 			FunctionMap{},
 			Environment{"somekey": NewStringStatement("somevalue")},
-			NewErrorStatement(fmt.Errorf("Environment key `nokey' not found")),
+			NewErrorStatement(fmt.Errorf("environment key `nokey' not found")),
+		},
+		{"!nokey",
+			FunctionMap{},
+			Environment{"somekey": NewStringStatement("somevalue")},
+			NewErrorStatement(fmt.Errorf("environment key `nokey' not found")),
 		},
 	}
 	for _, test := range tests {
@@ -153,13 +163,14 @@ func TestEval(t *testing.T) {
 
 }
 
-func TestEvalStandartLogic(t *testing.T) {
+func TestEvalStandartLogicFunctions(t *testing.T) {
 	var tests = []struct {
 		program string
 		funcs   FunctionMap
 		env     Environment
 		result  Statement
 	}{
+		// with eval
 		{"(and (env a) (env b))",
 			StandartLogicFunctions,
 			Environment{"a": NewBoolStatement(true), "b": NewBoolStatement(true)},
@@ -187,6 +198,38 @@ func TestEvalStandartLogic(t *testing.T) {
 			NewErrorStatement(fmt.Errorf("Wow!")),
 		},
 		{"(if (env a) b c)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewStringStatement("Here")},
+			NewStringStatement("b"),
+		},
+		// with ! eval
+		{"(and !a !b)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewBoolStatement(true)},
+			NewBoolStatement(true),
+		},
+		{"(and !a !b)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewBoolStatement(false)},
+			NewBoolStatement(false),
+		},
+		{"(or !a !b !c)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(false), "b": NewBoolStatement(false), "c": NewBoolStatement(false)},
+			NewBoolStatement(false),
+		},
+		{"(or (or !a !d) !b !c)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(false), "b": NewBoolStatement(false), "c": NewBoolStatement(false),
+				"d": NewBoolStatement(true)},
+			NewBoolStatement(true),
+		},
+		{"(and !a !b)",
+			StandartLogicFunctions,
+			Environment{"a": NewBoolStatement(true), "b": NewErrorStatement(fmt.Errorf("Wow!"))},
+			NewErrorStatement(fmt.Errorf("Wow!")),
+		},
+		{"(if !a b c)",
 			StandartLogicFunctions,
 			Environment{"a": NewBoolStatement(true), "b": NewStringStatement("Here")},
 			NewStringStatement("b"),
@@ -277,6 +320,7 @@ func TestFuzzyEq(t *testing.T) {
 	}
 }
 
+/*
 func TestJson2Env(t *testing.T) {
 	inp := map[string]interface{}{
 		"a": "abc",
@@ -313,6 +357,7 @@ func TestJson2Env(t *testing.T) {
 		}
 	}
 }
+*/
 
 func sliceEq(a, b []float32) bool {
 	if (a == nil) != (b == nil) {

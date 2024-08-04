@@ -6,20 +6,20 @@ import "fmt"
 var StandartLogicFunctions = FunctionMap{
 	"not": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) != 1 {
-			return NewErrorStatement(fmt.Errorf("Function `not' required one param"))
+			return NewErrorStatement(fmt.Errorf("function `not' required one param"))
 		}
 		v := Eval(funcs, env, &expr[0])
 		if v.Type() == STError {
 			return v
 		}
 		if v.Type() != STBool {
-			return NewErrorStatement(fmt.Errorf("Function `not' expect bool param"))
+			return NewErrorStatement(fmt.Errorf("function `not' expect bool param"))
 		}
 		return NewBoolStatement(!v.ValueBool())
 	},
 	"and": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) == 0 {
-			return NewErrorStatement(fmt.Errorf("Function `and' required at least one param"))
+			return NewErrorStatement(fmt.Errorf("function `and' required at least one param"))
 		}
 		for _, e := range expr {
 			v := Eval(funcs, env, &e)
@@ -27,7 +27,7 @@ var StandartLogicFunctions = FunctionMap{
 				return v
 			}
 			if v.Type() != STBool {
-				return NewErrorStatement(fmt.Errorf("Function `and' expect bool param"))
+				return NewErrorStatement(fmt.Errorf("function `and' expect bool param"))
 			}
 			if !v.ValueBool() {
 				return NewBoolStatement(false)
@@ -37,7 +37,7 @@ var StandartLogicFunctions = FunctionMap{
 	},
 	"or": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) == 0 {
-			return NewErrorStatement(fmt.Errorf("Function `or' required at least one param"))
+			return NewErrorStatement(fmt.Errorf("function `or' required at least one param"))
 		}
 		for _, e := range expr {
 			v := Eval(funcs, env, &e)
@@ -45,7 +45,7 @@ var StandartLogicFunctions = FunctionMap{
 				return v
 			}
 			if v.Type() != STBool {
-				return NewErrorStatement(fmt.Errorf("Function `or' expect bool param"))
+				return NewErrorStatement(fmt.Errorf("function `or' expect bool param"))
 			}
 			if v.ValueBool() {
 				return NewBoolStatement(true)
@@ -55,14 +55,14 @@ var StandartLogicFunctions = FunctionMap{
 	},
 	"if": func(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 		if len(expr) != 3 {
-			return NewErrorStatement(fmt.Errorf("Function `if' required 3 param"))
+			return NewErrorStatement(fmt.Errorf("function `if' required 3 param"))
 		}
 		cond := Eval(funcs, env, &expr[0])
 		if cond.Type() == STError {
 			return cond
 		}
 		if cond.Type() != STBool {
-			return NewErrorStatement(fmt.Errorf("Function `if' expect bool param in condition"))
+			return NewErrorStatement(fmt.Errorf("function `if' expect bool param in condition"))
 		}
 		if cond.ValueBool() {
 			return Eval(funcs, env, &expr[1])

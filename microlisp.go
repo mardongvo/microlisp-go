@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-//fuzzy logic support
+// fuzzy logic support
 type FuzzyElement struct {
 	Value   Statement
 	Percent float32
@@ -13,7 +13,7 @@ type FuzzyElement struct {
 
 type FuzzySetType []FuzzyElement
 
-//types declaration
+// types declaration
 type StatementType uint8
 
 const (
@@ -38,8 +38,8 @@ type Environment map[string]Statement
 
 type FunctionHandler func(funcs *FunctionMap, env *Environment, expr []Statement) Statement
 
-//***Parse-->
-//partially from https://github.com/veonik/go-lisp/blob/master/lisp/tokens.go
+// ***Parse-->
+// partially from https://github.com/veonik/go-lisp/blob/master/lisp/tokens.go
 type Tokens []*Token
 
 type tokenType uint8
@@ -85,14 +85,14 @@ func splitToTokens(program string) (tokens Tokens) {
 	return
 }
 
-//*AST
-var ErrorEndOfExpression = fmt.Errorf("Unexprected end of expression")
-var ErrorExpectOpen = fmt.Errorf("Expected opening parenthesis")
-var ErrorTooManyTokens = fmt.Errorf("Too many tokens")
+// *AST
+var ErrorEndOfExpression = fmt.Errorf("unexprected end of expression")
+var ErrorExpectOpen = fmt.Errorf("expected opening parenthesis")
+var ErrorTooManyTokens = fmt.Errorf("too many tokens")
 
-//we expect only
-//1. one atom
-//2. s-expression
+// we expect only
+// 1. one atom
+// 2. s-expression
 func buildAST(tokens Tokens, startpos int) (Statement, int, error) {
 	var expression = make([]Statement, 0)
 	pos := startpos
@@ -148,7 +148,7 @@ func Parse(program string) (Statement, error) {
 func GetFromEnv(funcs *FunctionMap, env *Environment, expr []Statement) Statement {
 	var key Statement
 	if len(expr) != 1 {
-		return NewErrorStatement(fmt.Errorf("Function `env' expect 1 param"))
+		return NewErrorStatement(fmt.Errorf("function `env' expect 1 param"))
 	}
 	if expr[0].Type() == STExpression {
 		key = Eval(funcs, env, &expr[0])
@@ -156,20 +156,20 @@ func GetFromEnv(funcs *FunctionMap, env *Environment, expr []Statement) Statemen
 		key = expr[0]
 	}
 	if key.Type() != STString {
-		return NewErrorStatement(fmt.Errorf("Function `env' expect 1 param is string"))
+		return NewErrorStatement(fmt.Errorf("function `env' expect 1 param is string"))
 	}
 	if val, ok := (*env).Get(key.ValueString()); ok {
 		return val
 	}
-	return NewErrorStatement(fmt.Errorf("Environment key `%s' not found", key.ValueString()))
+	return NewErrorStatement(fmt.Errorf("environment key `%s' not found", key.ValueString()))
 }
 
-//Eval
+// Eval
 func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
 	if expr.Type() == STExpression {
 		e := expr.ValueExpression()
 		if len(e) == 0 {
-			return NewErrorStatement(fmt.Errorf("Expression without function name"))
+			return NewErrorStatement(fmt.Errorf("expression without function name"))
 		}
 		if e[0].ValueString() == "env" {
 			return GetFromEnv(funcs, env, e[1:])
@@ -177,7 +177,12 @@ func Eval(funcs *FunctionMap, env *Environment, expr *Statement) Statement {
 		if fhandler, ok := (*funcs)[e[0].ValueString()]; ok {
 			return fhandler(funcs, env, e[1:])
 		}
-		return NewErrorStatement(fmt.Errorf("Function %s not found", e[0].ValueString()))
+		return NewErrorStatement(fmt.Errorf("function %s not found", e[0].ValueString()))
+	}
+	// `env` second form (`!`)
+	if expr.Type() == STString && expr.ValueString()[0] == '!' {
+		key := NewStringStatement(expr.ValueString()[1:])
+		return GetFromEnv(funcs, env, []Statement{key})
 	}
 	return *expr
 }
